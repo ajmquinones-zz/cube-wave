@@ -1,6 +1,7 @@
 const DEG2RAD = 0.017453292519943295;
 let container;
 let camera;
+let controls;
 let scene;
 let frustumSize = 600;
 let width = 20;
@@ -63,10 +64,18 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.addEventListener('change', render); // remove when using animation loop
+  // enable animation loop when using damping or autorotation
+  //controls.enableDamping = true;
+  //controls.dampingFactor = 0.25;
+  controls.enableZoom = false;
 }
 
 function animate() {
   requestAnimationFrame(animate);
+  controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
   render();
 }
 
@@ -75,7 +84,13 @@ function mapRange(value, from1, to1, from2, to2) {
 }
 
 function wave(value, theta) {
-  return Math.sin(DEG2RAD * value + theta);
+
+  let result = Math.sin(DEG2RAD * value - theta);
+  return result;
+}
+
+function sigmoid(t) {
+  return 1 / (1 + Math.pow(Math.E, -t));
 }
 
 function render() {
@@ -93,13 +108,20 @@ function render() {
     let distance = Math.sqrt(dz * dz + dx * dx);
 
     // 11,32 = max distance (sqrt(8^2 + 8^2))
-    let waveValue = wave(mapRange(distance, 0, 11.32, -180, 180, true), theta);
-    let eased = EasingFunctions.linear((waveValue + 1) / 2);
+    let activated = mapRange(distance, 0, 11.32, -180, 180);
+
+    // We use sigmoid to dampen the effects of the sine function in the 
+    // center of the cube, making the resulting wave rounder but less
+    // bouncier :(
+    let eased = sigmoid(distance / 3);
+    let scale = wave(activated, theta);
+
+    // Square the easing factor so it becomes less damp at the edges
+    scale *= (eased * eased * 1.25)
 
     // The minimum scaling for each block (20% of the maximum height)
     let minScale = 0.2;
     let oscillation = (1 - minScale) / 2;
-    let scale = eased * 2 - 1;
     object.scale.y = minScale + oscillation + (oscillation * scale);
   }));
 }

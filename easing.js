@@ -29,6 +29,8 @@ EasingFunctions = {
   easeOutQuint: function (t) { return 1 + (--t) * t * t * t * t },
   // acceleration until halfway, then deceleration 
   easeInOutQuint: function (t) { return t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t },
+  easeInCirc: function (t) { return 1 - Math.sqrt(1 - t * t); },
+  easeOutCirc: function (t) { return Math.sqrt(1 - (--t * t)); },
   easeInOutCirc: function (t) {
     return ((t *= 2) <= 1 ? 1 - Math.sqrt(1 - t * t) : Math.sqrt(1 - (t -= 2) * t) + 1) / 2;
   }
